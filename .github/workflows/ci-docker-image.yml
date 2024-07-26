@@ -32,7 +32,66 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./src
+          context: .
           file: ./src/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest, ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:${{ github.run_number }}
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
+
+      - name: Build
+        run: dotnet build src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj --no-restore
+
+      - name: Test
+        run: dotnet test src/DevOpsChallenge.SalesApi.Tests/DevOpsChallenge.SalesApi.Tests.csproj --no-build --verbosity normal
+
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Trivy
+        uses: aquasecurity/trivy-action@master
+
+      - name: Scan image
+        run: trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+
+  sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Install SonarScanner
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          export PATH="$PATH:/home/runner/.dotnet/tools"
+
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin /k:"your_project_key" /d:sonar.host.url="https://your-sonarqube-server-url" /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          dotnet build src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
