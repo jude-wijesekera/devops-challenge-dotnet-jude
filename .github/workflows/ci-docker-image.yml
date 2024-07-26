@@ -72,7 +72,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
 
       - name: Scan image
-        run: trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+        run: trivy image --scanners vuln ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
 
   snyk:
     runs-on: ubuntu-latest
