@@ -26,6 +26,7 @@ COPY --from=build /app/publish .
 
 # Expose the port the application runs on
 EXPOSE 80
+EXPOSE 90
 
 # Set the entry point to run the application
 ENTRYPOINT ["dotnet", "DevOpsChallenge.SalesApi.dll"]
