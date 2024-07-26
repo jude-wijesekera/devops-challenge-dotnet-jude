@@ -47,7 +47,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '7.0.x'
 
       - name: Restore dependencies
         run: dotnet restore src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
@@ -81,7 +81,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '7.0.x'
 
       - name: Install Snyk
         run: npm install -g snyk
