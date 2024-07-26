@@ -9,9 +9,9 @@ COPY DevOpsChallenge.SalesApi/*.csproj DevOpsChallenge.SalesApi/
 RUN dotnet restore DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
 
 # Copy the rest of the project files
-COPY DevOpsChallenge.SalesApi.Business/ DevOpsChallenge.SalesApi.Business/
-COPY DevOpsChallenge.SalesApi.Database/ DevOpsChallenge.SalesApi.Database/
-COPY DevOpsChallenge.SalesApi/ DevOpsChallenge.SalesApi/
+COPY src/DevOpsChallenge.SalesApi.Business/ DevOpsChallenge.SalesApi.Business/
+COPY src/DevOpsChallenge.SalesApi.Database/ DevOpsChallenge.SalesApi.Database/
+COPY src/DevOpsChallenge.SalesApi/ DevOpsChallenge.SalesApi/
 
 # Build the application
 WORKDIR /src/DevOpsChallenge.SalesApi
