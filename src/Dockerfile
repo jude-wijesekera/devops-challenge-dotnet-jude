@@ -3,10 +3,10 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 
 # Copy the .csproj files and restore any dependencies
-COPY ["DevOpsChallenge.SalesApi.Business/DevOpsChallenge.SalesApi.Business.csproj", "DevOpsChallenge.SalesApi.Business/"]
-COPY ["DevOpsChallenge.SalesApi.Database/DevOpsChallenge.SalesApi.Database.csproj", "DevOpsChallenge.SalesApi.Database/"]
-COPY ["DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj", "DevOpsChallenge.SalesApi/"]
-RUN dotnet restore "DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj"
+COPY DevOpsChallenge.SalesApi.Business/*.csproj DevOpsChallenge.SalesApi.Business/
+COPY DevOpsChallenge.SalesApi.Database/*.csproj DevOpsChallenge.SalesApi.Database/
+COPY DevOpsChallenge.SalesApi/*.csproj DevOpsChallenge.SalesApi/
+RUN dotnet restore DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
 
 # Copy the rest of the project files
 COPY DevOpsChallenge.SalesApi.Business/ DevOpsChallenge.SalesApi.Business/
