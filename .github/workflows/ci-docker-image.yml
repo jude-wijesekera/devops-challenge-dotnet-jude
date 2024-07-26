@@ -55,8 +55,11 @@ jobs:
       - name: Build
         run: dotnet build src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj --no-restore
 
-      - name: Test
+      - name: Business Test
         run: dotnet test tests/DevOpsChallenge.SalesApi.Business.UnitTests/DevOpsChallenge.SalesApi.Business.UnitTests.csproj --no-build --verbosity normal
+
+      - name: Integration Test
+        run: dotnet test tests/DevOpsChallenge.SalesApi.IntegrationTests/DevOpsChallenge.SalesApi.IntegrationTests.csproj --no-build --verbosity normal  
 
   scan:
     runs-on: ubuntu-latest
