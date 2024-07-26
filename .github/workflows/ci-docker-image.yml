@@ -71,7 +71,7 @@ jobs:
       - name: Scan image
         run: trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
 
-  sonar:
+  snyk:
     runs-on: ubuntu-latest
 
     steps:
@@ -83,15 +83,11 @@ jobs:
         with:
           dotnet-version: '5.0.x'
 
-      - name: Install SonarScanner
-        run: |
-          dotnet tool install --global dotnet-sonarscanner
-          export PATH="$PATH:/home/runner/.dotnet/tools"
+      - name: Install Snyk
+        run: npm install -g snyk
 
-      - name: SonarQube Scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet sonarscanner begin /k:"your_project_key" /d:sonar.host.url="https://your-sonarqube-server-url" /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
-          dotnet build src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
-          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+      - name: Run Snyk to check for vulnerabilities
+        run: snyk test --all-projects
