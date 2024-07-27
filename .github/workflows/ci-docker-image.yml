@@ -78,15 +78,18 @@ jobs:
         sudo apt-get install -y trivy
 
     - name: Scan for vulnerabilities
+      id: trivy-scan
       run: |
-        trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+        trivy fs --exit-code 1 --severity HIGH,CRITICAL --format table --output trivy-report.txt .
+        cat trivy-report.txt
 
     - name: Upload Trivy scan results
       if: failure()
       uses: actions/upload-artifact@v2
       with:
         name: trivy-scan-results
-        path: trivy-report.json
+        path: trivy-report.txt
+        
   snyk:
     runs-on: ubuntu-latest
 
