@@ -65,15 +65,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Trivy
-        uses: aquasecurity/trivy-action@master
+    - name: Set up Trivy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install -y trivy
 
-      - name: Scan image
-        run: trivy image --scanners vuln ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+    - name: Scan for vulnerabilities
+      run: |
+        trivy fs --exit-code 1 --severity HIGH,CRITICAL .
 
+    - name: Upload Trivy scan results
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: trivy-scan-results
+        path: trivy-report.json
   snyk:
     runs-on: ubuntu-latest
 
