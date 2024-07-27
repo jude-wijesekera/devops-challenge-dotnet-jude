@@ -1,69 +1,314 @@
-# DevOps Challenge (.NET)
+# CI/CD Pipeline for .NET 5 Application with Trivy and SonarCloud Integration
 
-## Overview :wave:
+## Overview
 
-This challenge focuses on the diverse skills needed by a DevOps Engineer to develop a.NET 5 application.
+This documentation outlines the steps to set up a CI/CD pipeline for a .NET 5 application using GitHub Actions. The pipeline includes building and pushing a Docker image, scanning for vulnerabilities using Trivy, performing code quality and security analysis using SonarCloud, and running integration tests on the built Docker image.
 
-In completing the challenge, you're welcome to change all aspects of the initial repository, including:
-* Directory and file structure.
-* Solution and project names.
-* Namespaces and class names.
-* Code, data, and settings files.
-* NuGet packages and dependencies.
-* This README!
+## Prerequisites
 
-The solution should embody best practices, even if the initial solution lacks them.
+- **GitHub Repository**: Ensure you have a GitHub repository set up with your .NET 5 application.
+- **DockerHub Account**: Create a DockerHub account and generate an access token.
+- **SonarCloud Account**: Create a SonarCloud account, set up a project, and generate an access token.
+- **Trivy**: Trivy is an open-source vulnerability scanner for containers and other artifacts.
+- **Secrets**: Add the following secrets to your GitHub repository:
+  - `DOCKERHUB_USERNAME`: Your DockerHub username.
+  - `DOCKERHUB_TOKEN`: Your DockerHub access token.
+  - `SONAR_TOKEN`: Your SonarCloud access token.
+  - `SONAR_PROJECT_KEY`: Your SonarCloud project key.
+  - `SONAR_ORGANIZATION`: Your SonarCloud organization.
 
-You'll need .NET 5 and SQL Server Local DB to build and run the application locally. On a Mac or Linux device, you can update the connection string (in `appsettings.Development.json` and `DatabaseContextDesignTimeFactory.cs`) and use Docker to launch SQL Server Developer Edition.
+## Directory Structure
 
-## Background :blue_book:
+Ensure your repository follows a directory structure similar to the following:
 
-You're a DevOps Engineer working in a small team to launch a new application. The management team will use the new application to view and report on daily sales data.
+```plaintext
+.
+├── src
+│ ├── DevOpsChallenge.SalesApi
+│ │ ├── Dockerfile
+│ │ ├── DevOpsChallenge.SalesApi.csproj
+│ │ └── ... (other source files)
+│ └── ... (other projects)
+├── tests
+│ ├── DevOpsChallenge.SalesApi.Business.UnitTests
+│ │ ├── DevOpsChallenge.SalesApi.Business.UnitTests.csproj
+│ │ └── ... (test files)
+│ ├── DevOpsChallenge.SalesApi.IntegrationTests
+│ │ ├── DevOpsChallenge.SalesApi.IntegrationTests.csproj
+│ │ └── ... (test files)
+└── .github
+└── workflows
+└── ci.yml
+```
 
-The development team have built a new API to ingest sales data from an existing system and provide endpoints for viewing and reporting the data. A future application will provide a user interface.
+## Docker File creation
 
-*Note: For simplicity of the solution, the API does not require authentication. Don't do this in a real application!*
+Create a Dockerfile (`./src/Dockerfile`) with the following content:
 
-## Question :question:
+```dockerfile
+# Use the official .NET 5 SDK image as the build environment
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+WORKDIR /src
 
-You should:
+# Copy the .csproj files and restore any dependencies
+COPY DevOpsChallenge.SalesApi.Business/*.csproj ./DevOpsChallenge.SalesApi.Business/
+COPY DevOpsChallenge.SalesApi.Database/*.csproj ./DevOpsChallenge.SalesApi.Database/
+COPY DevOpsChallenge.SalesApi/*.csproj ./DevOpsChallenge.SalesApi/
+RUN dotnet restore ./DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
 
-1. Introduce best practices into the solution to ensure a high-quality deliverable and a great developer experience.
+# Copy the rest of the project files
+COPY DevOpsChallenge.SalesApi.Business ./DevOpsChallenge.SalesApi.Business/
+COPY DevOpsChallenge.SalesApi.Database ./DevOpsChallenge.SalesApi.Database/
+COPY DevOpsChallenge.SalesApi ./DevOpsChallenge.SalesApi/
 
-2. Build and package the application as a container in a CI/CD pipeline ready for deployment
+# Build the application
+WORKDIR /src/DevOpsChallenge.SalesApi
+RUN dotnet publish -c Release -o /app/publish
 
-You'll need to select a CI/CD tool to complete the challenge. Feel free to use your preferred platform, such as GitHub Actions, Azure Pipelines, Circle CI, or Travis CI.
+# Use the official ASP.NET Core runtime image as the runtime environment
+FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS runtime
+WORKDIR /app
 
-*Note: This challenge does NOT require infrastructure provisioning or deployment. This challenge has designed to be possible without incurring any licencing, hosting or tooling costs.*
+# Copy the build output from the build environment
+COPY --from=build /app/publish .
 
-## Good to have (optional) :zap:
+# Expose the port the application runs on
+EXPOSE 80
+EXPOSE 90
 
-You've received feedback on the application from members of the project team. Optionally, fix these issues, or provide instructions back to the developer on the next steps to take:
+# Set the entry point to run the application
+ENTRYPOINT ["dotnet", "DevOpsChallenge.SalesApi.dll"]
+```
 
-1. The front end developer consuming the Sales API has mentioned the Swagger UI interface doesn't contain descriptions of operations, parameters, or responses. The Swagger UI interface should display the code comments written by the API developer.
+## GitHub Actions Workflow
 
-2. The security team have identified the application is revealing the technology used by sending the response header `Server: Kestrel`. This header should not be present in responses sent by the server.
+Create a GitHub Actions workflow file (`.github/workflows/ci.yml`) with the following content:
 
-3. The database administrator has identified poor query performance when a sale record is retrieved using its transaction ID. They have recommended creating an index.
+## YAML Configuration
 
-## Attempt :clock5:
+Below is the configuration used for GitHub Actions CI/CD pipelines:
 
-Spend as much or as little time as you like on this challenge. DevOps Engineers wear many hats :crown:, and there's always more opportunity for change and improvement. **Limit yourself to the time you have. Make the changes that deliver the most value.**
+```yaml
+name: CI-build-and-push-devops-challenge
 
-If you're looking for inspiration of changes to make, consider:
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
-* Getting started documentation for a new developer.
-* Configuring Git's behaviour for particular files.
-* Versioning of artifacts.
-* Linting and code quality analysis.
-* Scanning for code vulnerabilities.
-* Running unit tests.
-* Assessing code coverage.
-* Indexing PDBs for debugging in a deployed environment.
-* Preparing to run integration tests on a deployed environment.
-* Preparing to deploy database schema migrations.
-* Generating a client for the API.
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-There's always more to learn and do. **You don't need to do all of these to demonstrate your ability.** This list is a suggestion of ideas. You're welcome to do something else.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-Be kind to yourself, and enjoy the challenge. :heart:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest, ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:${{ github.run_number }}
+
+  scan-vulnerabilities:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Scan code for vulnerabilities
+        id: trivy-code-scan
+        run: |
+          trivy fs --severity HIGH,CRITICAL --format table --output trivy-code-report.txt .
+          cat trivy-code-report.txt
+
+      - name: Scan Docker image for vulnerabilities
+        id: trivy-image-scan
+        run: |
+          trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest --severity HIGH,CRITICAL --format table --output trivy-image-report.txt
+          cat trivy-image-report.txt
+
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v2
+        with:
+          name: trivy-scan-results
+          path: |
+            trivy-code-report.txt
+            trivy-image-report.txt
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: scan-vulnerabilities
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: SonarCloud Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet-sonarscanner begin /k:"jude-wijesekera_devops-challenge-dotnet-jude" /o:"jude-wijesekera" /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          dotnet build
+          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+  start-and-test:
+    runs-on: ubuntu-latest
+    needs: sonarcloud
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull Docker image if not available locally
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+
+      - name: Start Docker container
+        run: |
+          docker run -d --name devops-challenge-container -p 8080:80 ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+
+      - name: List all containers (for debugging)
+        run: |
+          docker ps -a
+
+      - name: Wait for container to be ready
+        run: |
+          echo "Waiting for the container to be ready..."
+          sleep 15
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj
+
+      - name: Build
+        run: dotnet build src/DevOpsChallenge.SalesApi/DevOpsChallenge.SalesApi.csproj --no-restore
+
+      - name: Business Test
+        run: dotnet test tests/DevOpsChallenge.SalesApi.Business.UnitTests/DevOpsChallenge.SalesApi.Business.UnitTests.csproj --no-build --verbosity normal
+
+      - name: Integration Test
+        run: dotnet test tests/DevOpsChallenge.SalesApi.IntegrationTests/DevOpsChallenge.SalesApi.IntegrationTests.csproj --no-build --verbosity normal
+
+      - name: Stop Docker container
+        run: |
+          CONTAINER_ID=$(docker ps -q -f name=devops-challenge-container)
+          if [ -n "$CONTAINER_ID" ]; then
+            docker stop $CONTAINER_ID
+          else
+            echo "Container devops-challenge-container is not running."
+          fi
+
+```
+
+## Workflow Steps Explanation :blue_book:
+
+### Build Job:
+
+- **Checkout :** Checks out the repository.
+- **Set up QEMU :** Sets up QEMU for cross-platform builds.
+- **Set up Docker Buildx :** Sets up Docker Buildx for building multi-platform Docker images.
+- **Login to DockerHub :** Logs into DockerHub using the provided secrets.
+- **Build and push :** Builds and pushes the Docker image to DockerHub.
+
+### Scan Vulnerabilities Job:
+
+- **Checkout code :** Checks out the repository.
+- **Set up Trivy :** Installs Trivy for vulnerability scanning.
+- **Scan code for vulnerabilities :** Scans the codebase for vulnerabilities and outputs the results.
+- **Scan Docker image for vulnerabilities :** Scans the built Docker image for vulnerabilities and outputs the results.
+- **Upload Trivy scan results :** Uploads the Trivy scan results as artifacts.
+
+### SonarCloud Job:
+
+- **Checkout code :** Checks out the repository.
+- **Setup Java :** Sets up Java, which is required by SonarCloud.
+- **Setup .NET :** Sets up .NET SDK.
+- **Cache SonarCloud packages :** Caches SonarCloud packages for faster builds.
+- **Install SonarScanner for .NET :** Installs the SonarScanner tool for .NET.
+- **SonarCloud Scan :** Runs the SonarCloud analysis on the codebase.
+
+### Start and Test Job:
+
+- **Checkout code :** Checks out the repository.
+- **Pull Docker image :** Pulls the Docker image if it's not available locally.
+- **Start Docker container :** Starts the Docker container.
+- **List all containers :** Lists all running containers for debugging purposes.
+- **Wait for container to be ready :** Waits for the container to be ready.
+- **Set up .NET :** Sets up the .NET SDK.
+- **Restore dependencies :** Restores the .NET project dependencies.
+- **Build :** Builds the .NET project.
+- **Business Test :** Runs the business unit tests.
+- **Integration Test :** Runs the integration tests.
+- **Stop Docker container :** Stops the Docker container.
+
+## Best Practices
+
+**Modular Jobs :** Each job in the workflow focuses on a specific task, making the workflow modular and easier to maintain.
+
+**Secrets Management :** Sensitive information like DockerHub credentials and SonarCloud tokens are stored securely using GitHub Secrets.
+
+**Caching :** Caching is used to speed up the workflow by avoiding repetitive installations.
+
+**Dependency Management :** Dependencies are restored and cached to ensure consistency across different runs.
+
+**Vulnerability Scanning :** Trivy is used to scan both the codebase and the Docker image for vulnerabilities.
+
+**Code Quality Analysis :** SonarCloud is used for code quality and security analysis, ensuring adherence to best practices.
+
+## Conclusion
+
+This documentation provides a comprehensive guide to setting up a CI/CD pipeline for a .NET 5 application using GitHub Actions. The pipeline includes building and pushing a Docker image, scanning for vulnerabilities using Trivy, performing code quality analysis using SonarCloud, and running integration tests. By following this guide, you can ensure a high-quality deliverable and a streamlined developer experience.
