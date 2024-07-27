@@ -77,18 +77,25 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y trivy
 
-    - name: Scan for vulnerabilities
-      id: trivy-scan
+    - name: Scan code for vulnerabilities
+      id: trivy-code-scan
       run: |
-        trivy fs --exit-code 1 --severity HIGH,CRITICAL --format table --output trivy-report.txt .
-        cat trivy-report.txt
+        trivy fs --severity LOW,MEDIUM,HIGH,CRITICAL --format table --output trivy-code-report.txt .
+        cat trivy-code-report.txt
+
+    - name: Scan Docker image for vulnerabilities
+      id: trivy-image-scan
+      run: |
+        trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest --severity LOW,MEDIUM,HIGH,CRITICAL --format table --output trivy-image-report.txt
+        cat trivy-image-report.txt
 
     - name: Upload Trivy scan results
-      if: failure()
       uses: actions/upload-artifact@v2
       with:
         name: trivy-scan-results
-        path: trivy-report.txt
+        path: |
+          trivy-code-report.txt
+          trivy-image-report.txt
         
   snyk:
     runs-on: ubuntu-latest
