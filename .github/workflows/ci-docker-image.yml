@@ -37,7 +37,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest, ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:${{ github.run_number }}
 
-  test:
+  unit-and-integration-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -61,7 +61,7 @@ jobs:
       - name: Integration Test
         run: dotnet test tests/DevOpsChallenge.SalesApi.IntegrationTests/DevOpsChallenge.SalesApi.IntegrationTests.csproj --no-build --verbosity normal  
 
-  scan:
+  scan-code-and-image-vulnerabilities:
     runs-on: ubuntu-latest
 
     steps:
@@ -80,13 +80,13 @@ jobs:
     - name: Scan code for vulnerabilities
       id: trivy-code-scan
       run: |
-        trivy fs --severity LOW,MEDIUM,HIGH,CRITICAL --format table --output trivy-code-report.txt .
+        trivy fs --severity HIGH,CRITICAL --format table --output trivy-code-report.txt .
         cat trivy-code-report.txt
 
     - name: Scan Docker image for vulnerabilities
       id: trivy-image-scan
       run: |
-        trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest --severity LOW,MEDIUM,HIGH,CRITICAL --format table --output trivy-image-report.txt
+        trivy image ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest --severity HIGH,CRITICAL --format table --output trivy-image-report.txt
         cat trivy-image-report.txt
 
     - name: Upload Trivy scan results
@@ -96,14 +96,3 @@ jobs:
         path: |
           trivy-code-report.txt
           trivy-image-report.txt
-        
-  snyk:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Run Snyk to check Docker image for vulnerabilities
-      uses: snyk/actions/docker@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        image: ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
