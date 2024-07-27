@@ -83,6 +83,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Pull Docker image if not available locally
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
+
       - name: Start Docker container
         run: |
           docker run -d --name devops-challenge-container -p 8080:80 ${{ secrets.DOCKERHUB_USERNAME }}/dockerfordotnetapi:latest
