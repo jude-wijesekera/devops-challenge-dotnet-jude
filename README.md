@@ -272,6 +272,9 @@ jobs:
 - **Scan Docker image for vulnerabilities :** Scans the built Docker image for vulnerabilities and outputs the results.
 - **Upload Trivy scan results :** Uploads the Trivy scan results as artifacts.
 
+  <img width="591" alt="image" src="https://github.com/user-attachments/assets/6a96fb2b-14a2-4084-a848-58de550dc486">
+
+
 ### SonarCloud Job:
 
 - **Checkout code :** Checks out the repository.
@@ -280,6 +283,9 @@ jobs:
 - **Cache SonarCloud packages :** Caches SonarCloud packages for faster builds.
 - **Install SonarScanner for .NET :** Installs the SonarScanner tool for .NET.
 - **SonarCloud Scan :** Runs the SonarCloud analysis on the codebase.
+
+(https://sonarcloud.io/summary/overall?id=jude-wijesekera_devops-challenge-dotnet-jude)
+<img width="740" alt="image" src="https://github.com/user-attachments/assets/7c0506a4-5446-48aa-b6d6-fa19e17d50ed">
 
 ### Start and Test Job:
 
